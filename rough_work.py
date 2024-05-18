@@ -1,5 +1,8 @@
-import pandas as pd
-import plotly.express as px
+"""
+Created by ION
+"""
+import pandas as pd  # type-ignore
+import plotly.express as px  # type-ignore
 
 # Define the data for the Gantt chart
 data = {
