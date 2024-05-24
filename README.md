@@ -5,3 +5,4 @@ This is a simple repo for testing implementations to be used for my MSC project 
 #TODO
 
 -   Add basic power cycles
+-   Review nanofluids and their history in thermal conductivity enhancement. This includes describing what models have already been used to approximate their behaviour and critically review their applicability.
