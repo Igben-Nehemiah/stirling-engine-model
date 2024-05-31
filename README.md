@@ -5,7 +5,6 @@ This is a simple repo for testing implementations to be used for my MSC project 
 #TODO
 
 -   Add basic power cycles (Stirling and others)
--   Add simple gas cycles
 -   Review nanofluids and their history in thermal conductivity enhancement. This includes describing what models have already been used to approximate their behaviour and critically review their applicability.
--   Add simple modlecular dynamics simulation.
+-   Add simple modlecular dynamics simulation with python.
 -   Add CFD simulation.
