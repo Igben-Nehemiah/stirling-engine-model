@@ -46,11 +46,6 @@
 
 ### 9. **Methodology**
 
--   **Experimental Projects:**
-    -   Description of the transient heated wire experiment.
-    -   Theory of operation and setup.
-    -   Procedures for conducting experiments on gas mixtures.
-    -   Data collection methods and analysis techniques.
 -   **Theoretical/Simulation Projects:**
     -   Overview of molecular dynamics simulations and Computational Fluid Dynamics (CFD) simulations.
     -   Software and tools used for simulations.
