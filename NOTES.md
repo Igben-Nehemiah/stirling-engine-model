@@ -68,11 +68,7 @@
 -   Limitations of the study.
 -   Recommendations for future research.
 
-### 12. **References**
-
--   Comprehensive list of all references cited in the thesis, formatted according to the required style guide (e.g., APA, MLA, IEEE).
-
-### 13. **Appendices**
+### 12. **Appendices**
 
 -   Additional data, detailed calculations, or supplementary material.
 -   Copies of important articles or documents referenced in the thesis.
