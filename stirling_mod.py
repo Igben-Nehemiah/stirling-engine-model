@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Tuple, Callable
 from enum import IntEnum
+import matplotlib.pyplot as plt
 
 
 class StirlingEngine:
@@ -68,6 +69,8 @@ class StirlingEngine:
         self.ycmax = 0   # maximum compression piston vertical displacement [m]
         self.yemax = 0   # maximum expansion piston vertical displacement [m]
         self.r = 0       # crank radius for beta configuration [m]
+        self.MAIN = [self.Index.TC, self.Index.TE, self.Index.QK,
+                     self.Index.QR, self.Index.QH, self.Index.WC, self.Index.WE]
 
     def set_parameters(self, params: dict):
         """
@@ -126,7 +129,7 @@ class StirlingEngine:
                   y[self.Index.TC]:.1f}[K], Te = {y[self.Index.TE]:.1f}[K]')
 
             for _ in range(INCREMENTS):
-                theta, y, dy = self.rk4(self.dadiab, 7, theta, DTHETA, y)
+                theta, y, dy = self.rk4(self.dadiab, theta, DTHETA, y)
 
             terror = abs(tc0 - y[self.Index.TC]) + abs(te0 - y[self.Index.TE])
             iter_count += 1
@@ -140,7 +143,7 @@ class StirlingEngine:
 
         for i in range(1, 37):
             for _ in range(STEP):
-                theta, y, dy = self.rk4(self.dadiab, 7, theta, DTHETA, y)
+                theta, y, dy = self.rk4(self.dadiab, theta, DTHETA, y)
             var, dvar = self.fill_matrix(i, y, dy, var, dvar)
 
         return var, dvar
@@ -170,8 +173,7 @@ class StirlingEngine:
         print(f' Thermal efficiency : {eff*100:.1f}[%]')
         print('========================================================')
 
-        # Plotting function would go here
-        # self.plot_adiabatic(var, dvar)
+        self.plot_adiabatic(var, dvar)
 
         return var, dvar
 
@@ -260,13 +262,12 @@ class StirlingEngine:
 
         return y, dy
 
-    def rk4(self, deriv: Callable, n: int, x: float, dx: float, y: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
+    def rk4(self, deriv: Callable, x: float, dx: float, y: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
         """
         Classical fourth order Runge-Kutta method.
 
         Args:
             deriv: Derivative function
-            n: Number of first order differential equations
             x: Independent variable
             dx: Step size
             y: Dependent variable vector
@@ -279,22 +280,26 @@ class StirlingEngine:
 
         y, dy1 = deriv(x0, y)
         y_temp = y.copy()
-        y_temp[:7] = y0[:7] + 0.5 * dx * dy1[:7]
+        y_temp[self.MAIN] = y0[self.MAIN] + \
+            0.5 * dx * dy1[self.MAIN]
 
         xm = x0 + 0.5 * dx
         y, dy2 = deriv(xm, y_temp)
         y_temp = y.copy()
-        y_temp[:7] = y0[:7] + 0.5 * dx * dy2[:7]
+        y_temp[self.MAIN] = y0[self.MAIN] + \
+            0.5 * dx * dy2[self.MAIN]
 
         y, dy3 = deriv(xm, y_temp)
         y_temp = y.copy()
-        y_temp[:7] = y0[:7] + dx * dy3[:7]
+        y_temp[self.MAIN] = y0[self.MAIN] + \
+            dx * dy3[self.MAIN]
 
         x = x0 + dx
         y, dy = deriv(x, y_temp)
 
-        dy[:7] = (dy1[:7] + 2*(dy2[:7] + dy3[:7]) + dy[:7]) / 6
-        y[:7] = y0[:7] + dx * dy[:7]
+        dy[self.MAIN] = (dy1[self.MAIN] + 2*(dy2[self.MAIN] +
+                                             dy3[self.MAIN]) + dy[self.MAIN]) / 6
+        y[self.MAIN] = y0[self.MAIN] + dx * dy[self.MAIN]
 
         return x, y, dy
 
@@ -423,9 +428,17 @@ class StirlingEngine:
             var: Variable matrix
             dvar: Derivative matrix
         """
-        # Implement plotting logic here
-        # This would typically use a library like matplotlib
-        pass
+        vol = (var[self.Index.VC, :] + self.vk +
+               # Volume in cubic centimeters...
+               self.vr + self.vh + var[self.Index.VE, :])*1e6
+        pres = var[self.Index.P]*1e-5  # Pressure in bar
+        plt.style.use('seaborn-v0_8-darkgrid')
+        plt.plot(vol, pres)
+        plt.xlabel("$Volume\ (cm^3)$")
+        plt.ylabel("$Pressure\ (bar)$")
+        plt.grid(True)
+        plt.title("$P-V\ diagram$")
+        plt.show()
 
     def run_simulation(self):
         """Run the Stirling engine simulation."""
@@ -449,10 +462,15 @@ if __name__ == "__main__":
         'vh': 4.783800000000000e-04,  # m^3
 
         # Gas properties (example values for helium)
-        'rgas_mix': 2077,  # J/kg.K
-        'cp_mix': 5193,    # J/kg.K
-        'cv_mix': 3116,    # J/kg.K
-        'mgas': 0.001,     # kg
+        # 'rgas_mix': 2077,  # J/kg.K
+        # 'cp_mix': 5193,    # J/kg.K
+        # 'cv_mix': 3116,    # J/kg.K
+        # 'mgas': 0.001,     # kg
+
+        'rgas_mix': 1.899440000000000e+03,  # J/kg.K
+        'cp_mix': 4.763339253731343e+03,    # J/kg.K
+        'cv_mix': 2.863899253731343e+03,    # J/kg.K
+        'mgas': 100,     # kg
 
         # Engine geometry
         'vclc': 2.868000000000000e-05,  # m^3
