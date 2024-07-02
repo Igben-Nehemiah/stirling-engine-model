@@ -478,20 +478,6 @@ if __name__ == "__main__":
         'vswc': 5.246000000000000e-04,   # m^3
         'vswe': 5.246000000000000e-04,   # m^3
         'alpha': np.pi/2,  # radians
-
-        # Engine type and specific parameters
-        'engine_type': 'sinusoidal',
-        'crank': 0.05,  # m
-        'b1': 0.1,      # m
-        'b2': 0.05,     # m
-        'dcomp': 0.08,  # m
-        'dexp': 0.08,   # m
-        'ymin': 0,      # m
-        'conrodc': 0.15,  # m
-        'conrode': 0.15,  # m
-        'ycmax': 0.1,     # m
-        'yemax': 0.1,     # m
-        'r': 0.0138,        # m
     }
 
     # Set the parameters
