@@ -352,13 +352,15 @@ class StirlingEngine:
 if __name__ == "__main__":
     engine = StirlingEngine()
 
+    th, tk = 977, 288
+
     # Define engine parameters
     params = {
         # Basic engine parameters
         'freq': 41.7,  # Hz
-        'tk': 288,   # K
-        'tr': (977-288)/np.log(977/288),   # K
-        'th': 977,   # K
+        'tk': tk,   # K
+        'tr': (th-tk)/np.log(th/tk),   # K
+        'th': th,   # K
         'vk': 4.783800000000000e-04,  # m^3
         'vr': 1.560600000000000e-04,  # m^3
         'vh': 4.783800000000000e-04,  # m^3
