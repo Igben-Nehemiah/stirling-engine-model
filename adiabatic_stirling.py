@@ -157,8 +157,6 @@ class StirlingEngine:
         print(f' Thermal efficiency: {eff * 100:.1f}[%]')
         print('========================================================')
 
-        self.plot_adiabatic(var, dvar)
-
         return var, dvar
 
     def dadiab(self, theta: float, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
