@@ -25,10 +25,10 @@ class StirlingEngine:
         ME = 15  # Mass of gas in the expansion space (kg)
         TCK = 16  # Conditional temperature compression space / cooler (K)
         THE = 17  # Conditional temperature heater / expansion space (K)
-        GACK = 18  # Conditional mass flow compression space / cooler (kg/rad)
-        GAKR = 19  # Conditional mass flow cooler / regenerator (kg/rad)
-        GARH = 20  # Conditional mass flow regenerator / heater (kg/rad)
-        GAHE = 21  # Conditional mass flow heater / expansion space (kg/rad)
+        MCK = 18  # Conditional mass flow compression space / cooler (kg/rad)
+        MKR = 19  # Conditional mass flow cooler / regenerator (kg/rad)
+        MRH = 20  # Conditional mass flow regenerator / heater (kg/rad)
+        MHE = 21  # Conditional mass flow heater / expansion space (kg/rad)
 
     @dataclass
     class Parameters:
@@ -45,12 +45,12 @@ class StirlingEngine:
         inside_dia_k_tube: float = 0
         no_k_tubes: int = 0
         len_k_tube: float = 0
-        no_r_tubes: int = 0
+        no_r_tubes: int = 0  # Number of tubes in regenerator
         reg_porosity: float = 0
-        reg_len: float = 0
+        reg_len: float = 0  # regenerator length [m]
         dwire: float = 0
-        domat: float = 0
-        dout: float = 0
+        domat: float = 0  # Tube housing internal diameter [m]
+        dout: float = 0   # Tube housing external diameter [m]
         mgas: float = 0
         gamma: float = 0
         rgas: float = 0
@@ -79,13 +79,9 @@ class StirlingEngine:
         self.vk, self.ak, self.awgk, self.dk, self.lk = self.pipes(
             self.params.no_k_tubes, self.params.inside_dia_k_tube, self.params.len_k_tube
         )
-        self.vr, self.ar, self.awgr, self.dr, self.lr = self.regen(
+        self.vr, self.ar, self.awgr, self.dr, self.lr, self.cqwr = self.regen(
             self.params.no_r_tubes, self.params.reg_len, self.params.dwire
         )
-
-        # self.vk = 4.783800000000000e-04  # m^3
-        # self.vr = 1.560600000000000e-04  # m^3
-        # self.vh = 4.783800000000000e-04  # m^3
 
         self.DEP_VAR_INDICES = [
             self.Index.TC, self.Index.TE, self.Index.QK,
@@ -98,15 +94,26 @@ class StirlingEngine:
         awg = num * np.pi * inner_dia * pipe_len
         return v, a, awg, inner_dia, pipe_len
 
-    def regen(self, num: int, lr: float, dwire: float) -> Tuple[float, float, float, float, float]:
+    def regen(self, num: int, lr: float, dwire: float) -> Tuple[float, float, float, float, float, float]:
+        # lr - regenerator effective length [m]
+        # dr - regen hydraulic diameter [m]
+
         dimat = 0
+        # no matrix regenerator wetted area [m^2]
         awgr0 = num * np.pi * self.params.domat * lr
-        amat = num * np.pi * (self.params.domat**2 - dimat**2) / 4
+        amat = num * np.pi * (self.params.domat**2 -
+                              dimat**2) / 4  # regen matrix area
+        # regen internal free flow area [m^2]
         ar = amat * self.params.reg_porosity
-        vr = ar * lr
+        vr = ar * lr  # regen void volume [m^3]
         dr = dwire * self.params.reg_porosity / (1 - self.params.reg_porosity)
-        awgr = 4 * vr / dr + awgr0
-        return vr, ar, awgr, dr, lr
+        awgr = 4 * vr / dr + awgr0  # regen internal wetted area [m^2]
+
+        kwr = 25  # thermal conductivity[W/m/K]
+        # regen housing wall area
+        awr = num*np.pi*(self.params.dout**2 - self.params.domat**2)/4
+        cqwr = kwr*awr/lr  # regenerator housing thermal conductance [W/K]
+        return vr, ar, awgr, dr, lr, cqwr
 
     def adiabatic(self) -> Tuple[np.ndarray, np.ndarray]:
         print('============Ideal Adiabatic Analysis====================')
@@ -206,14 +213,14 @@ class StirlingEngine:
         dy[self.Index.MH] = y[self.Index.MH] * dpop
 
         # Mass flow between cells
-        y[self.Index.GACK] = -dy[self.Index.MC]
-        y[self.Index.GAKR] = y[self.Index.GACK] - dy[self.Index.MK]
-        y[self.Index.GAHE] = dy[self.Index.ME]
-        y[self.Index.GARH] = y[self.Index.GAHE] + dy[self.Index.MH]
+        y[self.Index.MCK] = -dy[self.Index.MC]
+        y[self.Index.MKR] = y[self.Index.MCK] - dy[self.Index.MK]
+        y[self.Index.MHE] = dy[self.Index.ME]
+        y[self.Index.MRH] = y[self.Index.MHE] + dy[self.Index.MH]
 
         # Conditional temperatures between cells
-        y[self.Index.TCK] = self.params.tk if y[self.Index.GACK] <= 0 else y[self.Index.TC]
-        y[self.Index.THE] = y[self.Index.TE] if y[self.Index.GAHE] <= 0 else self.params.th
+        y[self.Index.TCK] = self.params.tk if y[self.Index.MCK] <= 0 else y[self.Index.TC]
+        y[self.Index.THE] = y[self.Index.TE] if y[self.Index.MHE] <= 0 else self.params.th
 
         # Working space temperatures
         dy[self.Index.TC] = y[self.Index.TC] * \
@@ -225,14 +232,14 @@ class StirlingEngine:
 
         # Energy
         dy[self.Index.QK] = self.vk * dy[self.Index.P] * self.cv / self.params.rgas - self.cp * \
-            (y[self.Index.TCK] * y[self.Index.GACK] -
-             self.params.tk * y[self.Index.GAKR])
+            (y[self.Index.TCK] * y[self.Index.MCK] -
+             self.params.tk * y[self.Index.MKR])
         dy[self.Index.QR] = self.vr * dy[self.Index.P] * self.cv / self.params.rgas - \
             self.cp * (self.params.tk *
-                       y[self.Index.GAKR] - self.params.th * y[self.Index.GARH])
+                       y[self.Index.MKR] - self.params.th * y[self.Index.MRH])
         dy[self.Index.QH] = self.vh * dy[self.Index.P] * self.cv / self.params.rgas - self.cp * \
-            (self.params.th * y[self.Index.GARH] -
-             y[self.Index.THE] * y[self.Index.GAHE])
+            (self.params.th * y[self.Index.MRH] -
+             y[self.Index.THE] * y[self.Index.MHE])
         dy[self.Index.WC] = y[self.Index.P] * dy[self.Index.VC]
         dy[self.Index.WE] = y[self.Index.P] * dy[self.Index.VE]
 
@@ -309,7 +316,7 @@ class StirlingEngine:
         vol = (var[self.Index.VC, :] + self.vk + self.vr + self.vh +
                var[self.Index.VE, :]) * 1e6  # Volume in cubic centimeters
         pres = var[self.Index.P] * 1e-5  # Pressure in bar
-        # qreg = var[self.Index.QR]
+        qreg = var[self.Index.QR]
 
         plt.figure(figsize=(10, 6))
         plt.plot(vol, pres)
@@ -327,8 +334,11 @@ class StirlingEngine:
         epsilon = 1  # allowable temperature error bound for cyclic convergence
         terror = 10 * epsilon  # Initial temperature error (to enter loop)
 
+        var = np.zeros((22, 37))
+        dvar = np.zeros((16, 37))
+
         while terror > epsilon:
-            var, _ = self.adiabatic()
+            var, dvar = self.adiabatic()
             qrloss = self.get_regenerator_heat_loss(var)
             tgh = self.hotsim(var, twh, qrloss)  # new heater gas temperature
             tgk = self.kolsim(var, twk, qrloss)  # new cooler gas temperature
@@ -338,18 +348,48 @@ class StirlingEngine:
             self.params.tr = (self.params.th - self.params.tk) / \
                 np.log(self.params.th / self.params.tk)
 
-        var, _ = self.adiabatic()
-        self.plot_pv_diagram(var)
+        # self.plot_pv_diagram(var)
+        # Print out ideal adiabatic analysis results
+        eff = var[self.Index.W, -1] / var[self.Index.QH, -1]
+        qk_power = var[self.Index.QK, -1] * self.params.freq
+        qr_power = var[self.Index.QR, -1] * self.params.freq
+        qh_power = var[self.Index.QH, -1] * self.params.freq
+        w_power = var[self.Index.W, -1] * self.params.freq
+
+        print('========== Ideal Adiabatic Analysis Results ============')
+        print(f' Heat transferred to the cooler: {qk_power:.2f}[W]')
+        print(f' Net heat transferred to the regenerator: {qr_power:.2f}[W]')
+        print(f' Heat transferred to the heater: {qh_power:.2f}[W]')
+        print(f' Total power output: {w_power:.2f}[W]')
+        print(f' Thermal efficiency: {eff * 100:.1f}[%]')
+        print('============= Regenerator analysis results============')
+        print(f'Regenerator net enthalpy loss: {
+              qrloss*self.params.freq:1f}[W]')
+        qwrl = self.cqwr*(twh - twk)/self.params.freq
+        print(f' Regenerator wall heat leakage: {qwrl*self.params.freq:1f}[W]')
+
+        print('========= pressure drop simple analysis =============')
+        dwork = self.worksim(var, dvar)
+        print(
+            ' Pressure drop available work loss: %.1f[W]\n', dwork*self.params.freq)
+        actual_w_power = w_power - dwork*self.params.freq
+        actual_qh_power = qh_power + qrloss*self.params.freq + qwrl*self.params.freq
+        actual_eff = actual_w_power/actual_qh_power
+        print(f'Actual power from simple analysis: {actual_w_power:.1f}[W]')
+        print(
+            f'Actual heat power in from simple analysis: {actual_qh_power:.1f}[W]', actual_qh_power)
+        print(
+            f'Actual efficiency from simple analysis: {actual_eff*100:.1f}[%]')
         return var
 
     def get_regenerator_heat_loss(self, var: np.ndarray) -> float:
         """Calculate the regenerator heat loss."""
         re = np.zeros(37)
         for i in range(37):
-            gar = (var[self.Index.GAKR, i] +
-                   var[self.Index.GARH, i]) * self.omega / 2
+            gar = (var[self.Index.MKR, i] +
+                   var[self.Index.MRH, i]) * self.omega / 2
             gr = gar / self.ar
-            _, re[i] = self.reynolds(self.params.tr, gr, self.dr)
+            _, _, re[i] = self.reynolds(self.params.tr, gr, self.dr)
 
         reavg = np.mean(re)
         st, _ = self.matrixfr(reavg)
@@ -362,7 +402,7 @@ class StirlingEngine:
 
         return qrloss
 
-    def reynolds(self, t: float, g: float, d: float) -> Tuple[float, float]:
+    def reynolds(self, t: float, g: float, d: float) -> Tuple[float, float, float]:
         """Evaluate dynamic viscosity, thermal conductivity, Reynolds number."""
         mu = self.params.mu0 * (self.params.t0 + self.params.t_suth) / \
             (t + self.params.t_suth) * (t / self.params.t0)**1.5
@@ -370,7 +410,7 @@ class StirlingEngine:
         self.params.prandtl = self.cp*mu/self.params.kgas
         # self.params.prandtl = 0.71
         re = max(1, abs(g) * d / mu)
-        return mu, re
+        return mu, self.params.kgas, re
 
     def matrixfr(self, re: float) -> Tuple[float, float]:
         """Evaluate regenerator mesh matrix Stanton number, friction factor."""
@@ -382,10 +422,10 @@ class StirlingEngine:
         """Evaluate heater average heat transfer performance."""
         re = np.zeros(37)
         for i in range(37):
-            gah = (var[self.Index.GARH, i] +
-                   var[self.Index.GAHE, i]) * self.omega / 2
+            gah = (var[self.Index.MRH, i] +
+                   var[self.Index.MHE, i]) * self.omega / 2
             gh = gah / self.ah
-            mu, re[i] = self.reynolds(self.params.th, gh, self.dh)
+            mu, _, re[i] = self.reynolds(self.params.th, gh, self.dh)
 
         reavg = np.mean(re)
         ht, _ = self.pipefr(self.dh, mu, reavg)
@@ -397,10 +437,10 @@ class StirlingEngine:
         """Evaluate cooler average heat transfer performance."""
         re = np.zeros(37)
         for i in range(37):
-            gak = (var[self.Index.GACK, i] +
-                   var[self.Index.GAKR, i]) * self.omega / 2
+            gak = (var[self.Index.MCK, i] +
+                   var[self.Index.MKR, i]) * self.omega / 2
             gk = gak / self.ak
-            mu, re[i] = self.reynolds(self.params.tk, gk, self.dk)
+            mu, _, re[i] = self.reynolds(self.params.tk, gk, self.dk)
 
         reavg = np.mean(re)
         ht, _ = self.pipefr(self.dk, mu, reavg)
@@ -414,10 +454,66 @@ class StirlingEngine:
         ht = fr * mu * self.cp / (2 * d * self.params.prandtl)
         return ht, fr
 
+    def worksim(self, var: np.ndarray, dvar: np.ndarray,):
+        dtheta = 2*np.pi/36
+        dwork = 0  # initialise pumping work loss
+        dpkol = np.zeros((37,))
+        dpreg = np.zeros_like(dpkol)
+        dphot = np.zeros_like(dpkol)
+        dp = np.zeros_like(dpkol)
+        pcom = np.zeros_like(dpkol)
+        pexp = np.zeros_like(dpkol)
+
+        for i in range(36):
+            # Cooler pressure drop
+            gk = (var[self.Index.MCK, i] + var[self.Index.MKR, i]) * \
+                self.omega/(2*self.ak)
+
+            mu, _, re = self.reynolds(self.params.tk, gk, self.dk)
+            _, fr = self.pipefr(self.dk, mu, re)
+
+            dpkol[i] = 2*fr*mu*self.vk*gk*self.lk / \
+                (var[self.Index.MK, i]*self.dk**2)
+
+            # Regenerator pressure drop
+            gr = (var[self.Index.MKR, i] + var[self.Index.MRH, i]) * \
+                self.omega/(2*self.ar)
+
+            mu, _, re = self.reynolds(self.params.tr, gr, self.dr)
+
+            _, fr = self.matrixfr(re)
+            dpreg[i] = 2*fr*mu*self.vr*gr*self.lr / \
+                (var[self.Index.MR, i]*self.dr**2)
+
+            # Heater pressure drop
+            gh = (var[self.Index.MRH, i] + var[self.Index.MHE, i]) * \
+                self.omega/(2*self.ah)
+
+            mu, _, re = self.reynolds(self.params.th, gh, self.dh)
+            _, fr = self.pipefr(self.dh, mu, re)
+
+            dphot[i] = 2*fr*mu*self.vk*gk*self.lk / \
+                (var[self.Index.MK, i]*self.dk**2)
+
+            # Total pressure drop
+            dp[i] = dpkol[i] + dpreg[i] + dphot[i]
+
+            dwork += dtheta*dp[i]*dvar[self.Index.VE, i]  # pumping work [J]
+            pcom[i] = var[self.Index.P, i]
+            pexp[i] = pcom[i] + dp[i]
+
+        dpkol[36] = dpkol[0]
+        dpreg[36] = dpreg[0]
+        dphot[36] = dphot[0]
+        dp[36] = dp[0]
+        pcom[36] = pcom[0]
+        pexp[36] = pexp[0]
+
+        return dwork
+
 
 def main():
     # Define engine parameters
-
     params_mod = StirlingEngine.Parameters(
         freq=41.7,  # Operating frequency (Hz)
         tk=288,  # Cold sink temperature (K)
@@ -464,36 +560,6 @@ def main():
         vswe=0.0001128,  # Heater void volume (m³)
         alpha=np.pi/2  # Expansion phase angle advance (radians)
     )
-
-    # params = StirlingEngine.Parameters(
-    #     freq=41.7,
-    #     tk=288,
-    #     th=977,
-    #     inside_dia_h_tube=0.302e-2,
-    #     no_h_tubes=40,
-    #     len_h_tube=24.53e-2,
-    #     inside_dia_k_tube=0.108e-2,
-    #     no_k_tubes=312,
-    #     len_k_tube=4.6e-2,
-    #     no_r_tubes=8,
-    #     reg_porosity=0.697,
-    #     reg_len=2.26e-2,
-    #     dwire=0.004e-2,
-    #     domat=2.26e-2,
-    #     dout=3e-2,
-    #     mgas=0.000005,
-    #     gamma=4.763339253731343e+03 / 2.863899253731343e+03,
-    #     rgas=1.899440000000000e+03,
-    #     mu0=18.85e-6,
-    #     t_suth=80.0,
-    #     t0=273,
-    #     kgas=0.15,
-    #     vclc=2.868000000000000e-05,
-    #     vcle=3.052000000000000e-05,
-    #     vswc=5.246000000000000e-04,
-    #     vswe=5.246e-4,
-    #     alpha=np.pi/2,
-    # )
 
     # Create StirlingEngine instance and run simulation
     engine = StirlingEngine(params_mod)
