@@ -20,115 +20,146 @@ import matplotlib.pyplot as plt
 
 
 class WorkingFluid(ABC):
+    """
+    Abstract base class for a working fluid.
+    Defines the interface for thermal conductivity, dynamic viscosity, and specific heat capacities.
+    """
+
     def __init__(self):
-        self.R_specific = 0
+        self.R_specific = 0  # Specific gas constant
 
     @abstractmethod
     def thermal_conductivity(self, temp):
-        pass
+        """
+        Calculate the thermal conductivity of the working fluid at a given temperature.
+        Arguments: 
+            temp: Temperature in Kelvin
+        Return: 
+            Thermal conductivity in W/(m·K)
+        """
 
     @abstractmethod
     def dynamic_viscosity(self, temp):
-        pass
+        """
+        Calculate the dynamic viscosity of the working fluid at a given temperature.
+        Arguments: 
+            temp: Temperature in Kelvin
+        Return: 
+            Dynamic viscosity in Pa·s
+        """
 
     @abstractmethod
     def specific_heat_capacities(self, temp):
-        pass
+        """
+        Calculate the specific heat capacities (C_v and C_p) of the working fluid at a given temperature.
+        Arguments:
+            temp: Temperature in Kelvin
+        Return:
+            Tuple of (C_v, C_p) in J/(kg·K)
+        """
 
 
 class IdealGasWorkingFluid(WorkingFluid):
+    """
+    Class representing an ideal gas working fluid.
+    """
     @dataclass
     class Parameters:
-        # Dynamic viscosity params
-        mu0: float
-        mu_t0: float
-        mu_t_suth: float
-        # Thermal conductivity params
-        k0: float
-        k_t0: float
-        k_t_suth: float
-        # Specific heat capacities params
-        a: float
+        mu0: float       # Reference dynamic viscosity in Pa·s
+        mu_t0: float     # Reference temperature for dynamic viscosity in Kelvin
+        mu_t_suth: float  # Sutherland's constant for dynamic viscosity in Kelvin
+        k0: float        # Reference thermal conductivity in W/(m·K)
+        k_t0: float      # Reference temperature for thermal conductivity in Kelvin
+        k_t_suth: float  # Sutherland's constant for thermal conductivity in Kelvin
+        a: float         # Coefficient for C_v polynomial term T^0 in J/(kg·K)
+        # Coefficient for C_v polynomial term T^1 in J/(kg·K^2)
         b: float
+        # Coefficient for C_v polynomial term T^2 in J/(kg·K^3)
         c: float
+        # Coefficient for C_v polynomial term T^3 in J/(kg·K^4)
         d: float
+        # Coefficient for C_v polynomial term T^4 in J/(kg·K^5)
         e: float
-        # Molar mass
-        molar_mass: float  # in kg/mol
+        molar_mass: float  # Molar mass in kg/mol
 
     def __init__(self, params: Parameters):
         self.params = params
+        # Specific gas constant in J/(kg·K)
         self.R_specific = 8.314 / self.params.molar_mass
 
     def thermal_conductivity(self, temp):
-        k = self.params.k0 * (self.params.k_t0 + self.params.k_t_suth) / \
-            (temp + self.params.k_t_suth) * (temp / self.params.k_t0)**1.5
+        k = self.params.k0 * ((self.params.k_t0 + self.params.k_t_suth) /
+                              (temp + self.params.k_t_suth) * (temp / self.params.k_t0)**1.5)
         return k
 
     def dynamic_viscosity(self, temp):
-        mu = self.params.mu0 * (self.params.mu_t0 + self.params.mu_t_suth) / \
-            (temp + self.params.mu_t_suth) * (temp / self.params.mu_t0)**1.5
+        mu = self.params.mu0 * ((self.params.mu_t0 + self.params.mu_t_suth) /
+                                (temp + self.params.mu_t_suth) * (temp / self.params.mu_t0)**1.5)
         return mu
 
     def specific_heat_capacities(self, temp):
-        cv = self.params.a + self.params.b * temp + self.params.c * \
-            temp**2 + self.params.d * temp**3 + self.params.e * temp**4
+        cv = (self.params.a + self.params.b * temp + self.params.c *
+              temp**2 + self.params.d * temp**3 + self.params.e * temp**4)*1000
         cp = cv + self.R_specific
         return cv, cp
 
 
 class NanofluidWorkingFluid(WorkingFluid):
+    """
+    Class representing a nanofluid working fluid.
+    """
+
     @dataclass
     class Parameters:
-        # Dynamic viscosity params
-        mu0: float
-        mu_t0: float
-        mu_t_suth: float
-        # Thermal conductivity params
-        k0: float
-        k_t0: float
-        k_t_suth: float
-        # Specific heat capacities params
-        a: float
+        mu0: float       # Reference dynamic viscosity in Pa·s
+        mu_t0: float     # Reference temperature for dynamic viscosity in Kelvin
+        mu_t_suth: float  # Sutherland's constant for dynamic viscosity in Kelvin
+        k0: float        # Reference thermal conductivity in W/(m·K)
+        k_t0: float      # Reference temperature for thermal conductivity in Kelvin
+        k_t_suth: float  # Sutherland's constant for thermal conductivity in Kelvin
+        a: float         # Coefficient for C_v polynomial term T^0 in J/(kg·K)
+        # Coefficient for C_v polynomial term T^1 in J/(kg·K^2)
         b: float
+        # Coefficient for C_v polynomial term T^2 in J/(kg·K^3)
         c: float
+        # Coefficient for C_v polynomial term T^3 in J/(kg·K^4)
         d: float
+        # Coefficient for C_v polynomial term T^4 in J/(kg·K^5)
         e: float
-        # Molar mass
-        molar_mass: float  # in kg/mol
-        # Nanofluid specific params
-        phi: float  # Volume fraction of nanoparticles
-        k_np: float  # Thermal conductivity of nanoparticles
-        mu_np: float  # Viscosity of nanoparticles
-        c_np: float  # Specific heat capacity of nanoparticles
+        molar_mass: float  # Molar mass in kg/mol
+        phi: float       # Volume fraction of nanoparticles
+        k_np: float      # Thermal conductivity of nanoparticles in W/(m·K)
+        mu_np: float     # Dynamic viscosity of nanoparticles in Pa·s
+        c_np: float      # Specific heat capacity of nanoparticles in J/(kg·K)
 
     def __init__(self, params: Parameters):
         self.params = params
+        # Specific gas constant in J/(kg·K)
         self.R_specific = 8.314 / self.params.molar_mass
 
     def thermal_conductivity(self, temp):
-        k_base = self.params.k0 * (self.params.k_t0 + self.params.k_t_suth) / \
-            (temp + self.params.k_t_suth) * (temp / self.params.k_t0)**1.5
+        k_base = self.params.k0 * ((self.params.k_t0 + self.params.k_t_suth) /
+                                   (temp + self.params.k_t_suth) * (temp / self.params.k_t0)**1.5)
         phi = self.params.phi
         k_np = self.params.k_np
 
-        # Using Maxwell-Garnett model for example
-        k_nf = k_base * (k_np + 2*k_base - 2*phi*(k_base - k_np)
-                         ) / (k_np + 2*k_base + phi*(k_base - k_np))
+        # Using Maxwell-Garnett model
+        k_nf = k_base * (k_np + 2 * k_base - 2 * phi * (k_base - k_np)) / \
+            (k_np + 2 * k_base + phi * (k_base - k_np))
         return k_nf
 
     def dynamic_viscosity(self, temp):
-        mu_base = self.params.mu0 * (self.params.mu_t0 + self.params.mu_t_suth) / \
-            (temp + self.params.mu_t_suth) * (temp / self.params.mu_t0)**1.5
+        mu_base = self.params.mu0 * ((self.params.mu_t0 + self.params.mu_t_suth) /
+                                     (temp + self.params.mu_t_suth) * (temp / self.params.mu_t0)**1.5)
         phi = self.params.phi
 
-        # Using Einstein's model for example
+        # Using Einstein's model
         mu_nf = mu_base * (1 + 2.5 * phi)
         return mu_nf
 
     def specific_heat_capacities(self, temp):
-        cv_base = self.params.a + self.params.b * temp + self.params.c * \
-            temp**2 + self.params.d * temp**3 + self.params.e * temp**4
+        cv_base = (self.params.a + self.params.b * temp + self.params.c *
+                   temp**2 + self.params.d * temp**3 + self.params.e * temp**4)*1000
         phi = self.params.phi
         c_np = self.params.c_np
 
@@ -212,21 +243,21 @@ class StirlingEngine:
             params (Parameters): Engine parameters
         """
         self.params = params
-        self._initialize_engine_parameters()
-        self._initialize_heat_exchanger_parameters()
+        self._initialise_engine_parameters()
+        self._initialise_heat_exchanger_parameters()
 
-        self.DEP_VAR_INDICES = [
+        self.dependent_var_indices = [
             self.Index.TC, self.Index.TE, self.Index.QK,
             self.Index.QR, self.Index.QH, self.Index.WC, self.Index.WE
         ]
 
-    def _initialize_engine_parameters(self):
-        """Initialize derived engine parameters."""
+    def _initialise_engine_parameters(self):
+        """Initialise derived engine parameters."""
         self.params.tr = (self.params.th - self.params.tk) / \
             np.log(self.params.th / self.params.tk)
         self.omega = 2 * np.pi * self.params.freq
 
-    def _initialize_heat_exchanger_parameters(self):
+    def _initialise_heat_exchanger_parameters(self):
         """Initialise heat exchanger parameters."""
         self.vh, self.ah, self.awgh, self.dh, self.lh = self._calculate_pipe_parameters(
             self.params.no_h_tubes, self.params.inside_dia_h_tube, self.params.len_h_tube
@@ -319,18 +350,18 @@ class StirlingEngine:
         qh_power = var[self.Index.QH, -1] * self.params.freq
         w_power = var[self.Index.W, -1] * self.params.freq
 
-        # print('========== Ideal Adiabatic Analysis Results ============')
-        # print(f'Heat transferred to the cooler: {qk_power:.2f} [W]')
-        # print(f'Net heat transferred to the regenerator: {qr_power:.2f} [W]')
-        # print(f'Heat transferred to the heater: {qh_power:.2f} [W]')
-        # print(f'Total power output: {w_power:.2f} [W]')
-        # print(f'Thermal efficiency: {eff * 100:.1f} [%]')
-        # print('============= Regenerator Analysis Results =============')
-        # print(f'Regenerator net enthalpy loss: {
-        #       qrloss * self.params.freq:.1f} [W]')
+        print('========== Ideal Adiabatic Analysis Results ============')
+        print(f'Heat transferred to the cooler: {qk_power:.2f} [W]')
+        print(f'Net heat transferred to the regenerator: {qr_power:.2f} [W]')
+        print(f'Heat transferred to the heater: {qh_power:.2f} [W]')
+        print(f'Total power output: {w_power:.2f} [W]')
+        print(f'Thermal efficiency: {eff * 100:.1f} [%]')
+        print('============= Regenerator Analysis Results =============')
+        print(f'Regenerator net enthalpy loss: {
+              qrloss * self.params.freq:.1f} [W]')
         qwrl = self.cqwr * (twh - twk) / self.params.freq
-        # print(f'Regenerator wall heat leakage: {
-        #       qwrl * self.params.freq:.1f} [W]')
+        print(f'Regenerator wall heat leakage: {
+              qwrl * self.params.freq:.1f} [W]')
 
         print('========= Pressure Drop Simple Analysis =============')
         dwork = self._calculate_pressure_drop(var, dvar)
@@ -611,27 +642,27 @@ class StirlingEngine:
 
         y, dy1 = derivs(theta0, y)
         y_temp = y.copy()
-        y_temp[self.DEP_VAR_INDICES] = y0[self.DEP_VAR_INDICES] + \
-            0.5 * dtheta * dy1[self.DEP_VAR_INDICES]
+        y_temp[self.dependent_var_indices] = y0[self.dependent_var_indices] + \
+            0.5 * dtheta * dy1[self.dependent_var_indices]
 
         theta_m = theta0 + 0.5 * dtheta
         y, dy2 = derivs(theta_m, y_temp)
         y_temp = y.copy()
-        y_temp[self.DEP_VAR_INDICES] = y0[self.DEP_VAR_INDICES] + \
-            0.5 * dtheta * dy2[self.DEP_VAR_INDICES]
+        y_temp[self.dependent_var_indices] = y0[self.dependent_var_indices] + \
+            0.5 * dtheta * dy2[self.dependent_var_indices]
 
         y, dy3 = derivs(theta_m, y_temp)
         y_temp = y.copy()
-        y_temp[self.DEP_VAR_INDICES] = y0[self.DEP_VAR_INDICES] + \
-            dtheta * dy3[self.DEP_VAR_INDICES]
+        y_temp[self.dependent_var_indices] = y0[self.dependent_var_indices] + \
+            dtheta * dy3[self.dependent_var_indices]
 
         theta = theta0 + dtheta
         y, dy = derivs(theta, y_temp)
 
-        dy[self.DEP_VAR_INDICES] = (dy1[self.DEP_VAR_INDICES] + 2*(
-            dy2[self.DEP_VAR_INDICES] + dy3[self.DEP_VAR_INDICES]) + dy[self.DEP_VAR_INDICES]) / 6
-        y[self.DEP_VAR_INDICES] = y0[self.DEP_VAR_INDICES] + \
-            dtheta * dy[self.DEP_VAR_INDICES]
+        dy[self.dependent_var_indices] = (dy1[self.dependent_var_indices] + 2*(
+            dy2[self.dependent_var_indices] + dy3[self.dependent_var_indices]) + dy[self.dependent_var_indices]) / 6
+        y[self.dependent_var_indices] = y0[self.dependent_var_indices] + \
+            dtheta * dy[self.dependent_var_indices]
 
         return theta, y, dy
 
@@ -930,7 +961,7 @@ def main():
         freq=41.7,  # Operating frequency (Hz)
         charge_pressure=4130000,  # Charge pressure (Pa)
         tk=288,  # Cold sink temperature (K)
-        th=600,  # Hot source temperature (K)
+        th=977,  # Hot source temperature (K)
         inside_dia_h_tube=0.00302,  # Heater tube inside diameter (m)
         no_h_tubes=40,  # Number of heater tubes
         len_h_tube=0.2423,  # Heater tube length (m)
