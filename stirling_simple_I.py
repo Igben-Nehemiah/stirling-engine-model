@@ -801,20 +801,20 @@ def main():
         # t0=273,  # Reference temperatu  re (K)
         # kgas=0.1513,  # Thermal conductivity of helium (W/m.K)
 
-        # gamma=1.41,  # Specific heat ratio for hydrogen
-        # rgas=4157.2,  # Gas constant for hydrogen [J/kg.K]
-        # # Dynamic viscosity of hydrogen at reference temp t0 [kg.m/s]
-        # mu0=8.35e-6,
-        # t_suth=84.4,  # Sutherland constant for hydrogen [K]
-        # t0=273,
-        # kgas=0.168,  # Thermal conductivity for hydrogen [W/m.K]
-
-        gamma=1.4,  # Specific heat ratio for air
-        rgas=287.1,  # Gas constant for air [J/kg.K]
-        mu0=17.08e-6,  # Dynamic viscosity of air at reference temp t0 [kg.m/s]
-        t_suth=112,  # Sutherland constant for air [K]
+        gamma=1.41,  # Specific heat ratio for hydrogen
+        rgas=4157.2,  # Gas constant for hydrogen [J/kg.K]
+        # Dynamic viscosity of hydrogen at reference temp t0 [kg.m/s]
+        mu0=8.35e-6,
+        t_suth=84.4,  # Sutherland constant for hydrogen [K]
         t0=273,
-        kgas=0.025,  # Thermal conductivity for air [W/m.K]
+        kgas=0.168,  # Thermal conductivity for hydrogen [W/m.K]
+
+        # gamma=1.4,  # Specific heat ratio for air
+        # rgas=287.1,  # Gas constant for air [J/kg.K]
+        # mu0=17.08e-6,  # Dynamic viscosity of air at reference temp t0 [kg.m/s]
+        # t_suth=112,  # Sutherland constant for air [K]
+        # t0=273,
+        # kgas=0.025,  # Thermal conductivity for air [W/m.K]
 
         vclc=0.0000468,  # Compression space total volume (m^3)
         vcle=0.0000168,  # Expansion space total volume (m^3)
