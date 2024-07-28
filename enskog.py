@@ -40,24 +40,24 @@ EOS = pyenskog.EOStype.BMCSL
 
 # Define density
 density_close_pack = 2.0 / (math.sqrt(2))
-density = 0.00001  # Density consistent with base code
+density = 0.00001  
 
 # Initialize Enskog solver
 e = pyenskog.Enskog(density, EOS, SonineOrder, verbose, kT, use_tables)
 
 # Parameters for species
 # Helium
-diameter2 = 208e-12
+diameter1 = 208e-12
 molar_mass_helium = 4e-3  # Molar mass in kg/mol
-mass2 = molar_mass_helium / avogadro  # in kg
+mass1 = molar_mass_helium / avogadro  # in kg
 
 # Hydrogen
-diameter1 = 228e-12
+diameter2 = 228e-12
 molar_mass_hydrogen = 2e-3  # Molar mass in kg/mol
-mass1 = molar_mass_hydrogen / avogadro  # in kg
+mass2 = molar_mass_hydrogen / avogadro  # in kg
 
 # Arrays to store results
-mole_fractions = np.linspace(0.0001, 0.9099, 10)
+mole_fractions = np.linspace(0.0001, 0.9999, 10)
 # Temperature range of heat exchangers in the GPU-3 Stirling engine
 temperatures = np.arange(250, 1000, 50)
 luu_thermal_conductivities = []
@@ -77,7 +77,7 @@ for T in temperatures:
             luu_thermal_conductivity, mass1, diameter1, T))
 
         ss_thermal_conductivity = (
-            e.Luu() - math.pow(e.Lau(0), 2) / e.Lab(0, 0))
+            e.Luu() - e.Lau(0)**2 / e.Lab(0, 0))
         ss_temp.append(convert_to_real_units(
             ss_thermal_conductivity, mass1, diameter1, T))
     luu_thermal_conductivities.append(luu_temp)
@@ -108,7 +108,6 @@ def predict_luu_thermal_conductivity(x, T):
 def predict_ss_thermal_conductivity(x, T):
     return poly2d((x, T), *ss_params)
 
-
 # Print the coefficients
 print("Coefficients for Phenomenological Thermal Conductivity (Luu):", luu_params)
 print("Coefficients for steady-state thermal conductivity (λ):", ss_params)
@@ -120,7 +119,7 @@ fontsize = 17
 # Contour plot for Phenomenological Thermal Conductivity (Luu)
 contour1 = ax[0].contourf(
     X, Y, luu_thermal_conductivities, cmap='coolwarm', levels=20)
-ax[0].set_xlabel('$x_{He}$', fontsize=fontsize)  # Increased font size
+ax[0].set_xlabel('$x_{H_2}$', fontsize=fontsize)  # Increased font size
 ax[0].set_ylabel('Temperature (K)', fontsize=fontsize)  # Increased font size
 contour1_lines = ax[0].contour(
     X, Y, luu_thermal_conductivities, levels=contour1.levels, colors='black', linewidths=0.5)
@@ -129,7 +128,7 @@ ax[0].tick_params(axis='both', which='major', labelsize=fontsize)
 # Contour plot for Steady State Thermal Conductivity (λ)
 contour2 = ax[1].contourf(
     X, Y, ss_thermal_conductivities, cmap='coolwarm', levels=20)
-ax[1].set_xlabel('$x_{He}$', fontsize=fontsize)
+ax[1].set_xlabel('$x_{H_2}$', fontsize=fontsize)
 ax[1].set_ylabel('Temperature (K)', fontsize=fontsize)
 contour2_lines = ax[1].contour(
     X, Y, ss_thermal_conductivities, levels=contour2.levels, colors='black', linewidths=0.5)
@@ -140,7 +139,6 @@ ax[1].tick_params(axis='both', which='major', labelsize=fontsize)
 plt.tight_layout()
 plt.savefig("thermal_conductivity_contour_plots.png", dpi=300)
 plt.show()
-
 
 print("Predicted Luu Thermal Conductivity at x=0.5 and T=423.25 K:",
       predict_luu_thermal_conductivity(0, 423.25))
