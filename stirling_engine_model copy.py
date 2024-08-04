@@ -986,54 +986,6 @@ class StirlingEngine:
         fig.savefig("cycle_temperature_variation", dpi=300, bbox_inches='tight')
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Define a function to simulate and collect data for different conditions
-def simulate_kpi(x_he_values, hydrogen_helium_params, is_classical):
-    heat_values = []
-    power_values = []
-    work_values = []
-
-    for x_he in x_he_values:
-        hydrogen_helium_params.x2 = x_he
-        hydrogen_helium_params.is_classical = is_classical
-        hydrogen_helium = GasMixtures(hydrogen_helium_params)
-
-        params_mod = StirlingEngine.Parameters(
-            freq=41.7,  # Operating frequency (Hz)
-            mean_pressure=4.13e6,  # Charge pressure (Pa)
-            twk=288,  # Cooler wall temperature (K)
-            twh=977,  # Heater wall temperature (K)
-            inside_dia_h_tube=0.00302,  # Heater tube inside diameter (m)
-            no_h_tubes=40,  # Number of heater tubes
-            len_h_tube=0.2453,  # Heater tube length (m)
-            inside_dia_k_tube=0.00108,  # Cooler tube inside diameter (m)
-            no_k_tubes=312,  # Number of cooler tubes
-            len_k_tube=0.0461,  # Cooler tube length (m)
-            no_r_tubes=8,  # Number of regenerator tubes
-            reg_porosity=0.69,  # Regenerator matrix porosity
-            reg_len=0.0226,  # Regenerator length (m)
-            k_reg=15,  # Regenerator thermal conductivity [W/m/K] - Stainless Steel
-            dwire=0.0000406,  # Regenerator matrix wire diameter (m)
-            domat=0.0226,  # Regenerator housing internal diameter (m)
-            dout=0.03,  # Regenerator housing external diameter (m)
-            working_fluid=hydrogen_helium,
-            vclc=28.68e-6,  # Compression space total volume (m^3)
-            vcle=30.52e-6,  # Expansion space total volume (m^3)
-            vswc=114.13e-6,  # Cooler void volume (m^3)
-            vswe=120.82e-6,  # Heater void volume (m^3)
-            alpha=np.pi/2  # Expansion phase angle advance (radians)
-        )
-
-        engine = StirlingEngine(params_mod)
-        kpis = engine.run_simulation()
-        heat_values.append(kpis[0])
-        power_values.append(kpis[1])
-        work_values.append(kpis[2])
-
-    return heat_values, power_values, work_values
-
 def main():
     # Data parameters for hydrogen, helium, and air
     hydrogen_params = IdealGasWorkingFluid.Parameters(
@@ -1089,56 +1041,114 @@ def main():
     hydrogen_helium_params = GasMixtures.Parameters(
         fluid1=hydrogen,
         fluid2=helium,
-        x2=0.75,  # Initial mole fraction
+        x2=.75,
         is_classical=False,
         is_max=False
     )
 
-    # x_he values
-    x_he_values = np.linspace(1, 0, 21, endpoint=True)
+    # hydrogen_helium = GasMixtures(hydrogen_helium_params)
 
-    # Simulate KPI for Enskog and Classical models
-    heat_values_enskog, power_values_enskog, work_values_enskog = simulate_kpi(x_he_values, hydrogen_helium_params, is_classical=False)
-    heat_values_classical, power_values_classical, work_values_classical = simulate_kpi(x_he_values, hydrogen_helium_params, is_classical=True)
+    # # GPU-3 engine parameters
+    # params_mod = StirlingEngine.Parameters(
+    #     freq=41.7,  # Operating frequency (Hz)
+    #     mean_pressure=4.13e6,  # Charge pressure (Pa)
+    #     twk=288,  # Cooler wall temperature (K)
+    #     twh=977,  # Heater wall temperature (K)
+    #     inside_dia_h_tube=0.00302,  # Heater tube inside diameter (m)
+    #     no_h_tubes=40,  # Number of heater tubes
+    #     len_h_tube=0.2453,  # Heater tube length (m)
+    #     inside_dia_k_tube=0.00108,  # Cooler tube inside diameter (m)
+    #     no_k_tubes=312,  # Number of cooler tubes
+    #     len_k_tube=0.0461,  # Cooler tube length (m)
+    #     no_r_tubes=8,  # Number of regenerator tubes
+    #     reg_porosity=0.69,  # Regenerator matrix porosity
+    #     reg_len=0.0226,  # Regenerator length (m)
+    #     k_reg= 15,  # regenerator thermal conductivity [W/m/K] - Stainless Steel
+    #     dwire=0.0000406,  # Regenerator matrix wire diameter (m)
+    #     domat=0.0226,  # Regenerator housing internal diameter (m)
+    #     dout=0.03,  # Regenerator housing external diameter (m)
+    #     working_fluid=hydrogen_helium,
+    #     vclc=28.68e-6,  # Compression space total volume (m^3)
+    #     vcle=30.52e-6,  # Expansion space total volume (m^3)
+    #     vswc=114.13e-6,  # Cooler void volume (m^3)
+    #     vswe=120.82e-6,  # Heater void volume (m^3)
+    #     alpha=np.pi/2  # Expansion phase angle advance (radians)
+    # )
 
-    # Plotting the results for Heat
-    fontsize = 17
-    plt.style.use(["science", "ieee", "no-latex"])
+    # Create StirlingEngine instance and run simulation
+    # engine = StirlingEngine(params_mod)
+    # engine.run_simulation()
 
+    x_he_values = []
+    heat_values = []
+    power_values = []
+    work_values = []
+    efficiency_values = []
+
+    print("here")
+
+    # File writing and simulation loop
+    with open(file="kpis.dat", mode='w', encoding="utf8") as fh:
+        fh.write("x_he,heat,power,work,efficiency\n")  # Writing the header to the file
+        
+        for x_he in np.linspace(1, 0, 21, endpoint=True):
+            hydrogen_helium_params.x2 = x_he
+            hydrogen_helium = GasMixtures(hydrogen_helium_params)
+
+            # GPU-3 engine parameters
+            params_mod = StirlingEngine.Parameters(
+                freq=41.7,  # Operating frequency (Hz)
+                mean_pressure=4.13e6,  # Charge pressure (Pa)
+                twk=288,  # Cooler wall temperature (K)
+                twh=977,  # Heater wall temperature (K)
+                inside_dia_h_tube=0.00302,  # Heater tube inside diameter (m)
+                no_h_tubes=40,  # Number of heater tubes
+                len_h_tube=0.2453,  # Heater tube length (m)
+                inside_dia_k_tube=0.00108,  # Cooler tube inside diameter (m)
+                no_k_tubes=312,  # Number of cooler tubes
+                len_k_tube=0.0461,  # Cooler tube length (m)
+                no_r_tubes=8,  # Number of regenerator tubes
+                reg_porosity=0.69,  # Regenerator matrix porosity
+                reg_len=0.0226,  # Regenerator length (m)
+                k_reg= 15,  # regenerator thermal conductivity [W/m/K] - Stainless Steel
+                dwire=0.0000406,  # Regenerator matrix wire diameter (m)
+                domat=0.0226,  # Regenerator housing internal diameter (m)
+                dout=0.03,  # Regenerator housing external diameter (m)
+                working_fluid=hydrogen_helium,
+                vclc=28.68e-6,  # Compression space total volume (m^3)
+                vcle=30.52e-6,  # Expansion space total volume (m^3)
+                vswc=114.13e-6,  # Cooler void volume (m^3)
+                vswe=120.82e-6,  # Heater void volume (m^3)
+                alpha=np.pi/2  # Expansion phase angle advance (radians)
+            )
+            engine = StirlingEngine(params_mod)
+            kpis = engine.run_simulation()
+            
+            # Write KPIs to file
+            fh.write(f"{x_he}, {kpis[0]}, {kpis[1]}, {kpis[2]}, {kpis[3]}\n")
+            
+            # Collect data for plotting
+            x_he_values.append(x_he)
+            heat_values.append(kpis[0])
+            power_values.append(kpis[1])
+            work_values.append(kpis[2])
+            efficiency_values.append(kpis[3])
+
+    # Plotting the KPIs as a function of x_he
     plt.figure(figsize=(10, 6))
-    plt.plot(x_he_values, heat_values_enskog, label='Enskog Model', color='b')
-    plt.plot(x_he_values, heat_values_classical, label='Classical Model', color='r')
-    plt.xlabel('Mole Fraction of Helium ($x_{He}$)', fontsize=fontsize, fontweight='bold')
-    plt.ylabel('Heat (J)', fontsize=fontsize, fontweight='bold')
-    plt.xlim(0, 1)  # Set x-axis limits from 0 to 1
-    plt.legend(fontsize=12)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("heat_vs_xhe.png", dpi=300)
 
-    # Plotting the results for Power
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_he_values, power_values_enskog, label='Enskog Model', color='b')
-    plt.plot(x_he_values, power_values_classical, label='Classical Model', color='r')
-    plt.xlabel('Mole Fraction of Helium ($x_{He}$)', fontsize=fontsize, fontweight='bold')
-    plt.ylabel('Power (W)', fontsize=fontsize, fontweight='bold')
-    plt.xlim(0, 1)  # Set x-axis limits from 0 to 1
-    plt.legend(fontsize=12)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("power_vs_xhe.png", dpi=300)
+    # plt.plot(x_he_values, heat_values, 'r-', label='Heat (J)')
+    # plt.plot(x_he_values, power_values, 'g-', label='Power (W)')
+    # plt.plot(x_he_values, work_values, 'b-', label='Work (J)')
+    plt.plot(x_he_values, efficiency_values, 'm-', label='Efficiency (%)')
 
-    # Plotting the results for Work
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_he_values, work_values_enskog, label='Enskog Model', color='b')
-    plt.plot(x_he_values, work_values_classical, label='Classical Model', color='r')
-    plt.xlabel('Mole Fraction of Helium ($x_{He}$)', fontsize=fontsize, fontweight='bold')
-    plt.ylabel('Work (J)', fontsize=fontsize, fontweight='bold')
-    plt.xlim(0, 1)  # Set x-axis limits from 0 to 1
-    plt.legend(fontsize=12)
+    plt.xlabel('Mole Fraction of Helium ($x_{He}$)')
+    plt.ylabel('KPIs')
+    plt.title('KPIs vs Mole Fraction of Helium')
+    plt.legend()
     plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("work_vs_xhe.png", dpi=300)
+    plt.savefig("kpis.png")
 
-if __name__ == "__main__":
+
+if __name__=="__main__":
     main()
