@@ -41,9 +41,9 @@ def simulate_pure_gas_KPIs(heater_wall_temperature_values, working_fluid):
 
         engine = StirlingEngine(params_mod)
         engine.run_simulation()
-        heat_values.append(engine.EngineKPIs.net_heat)
-        power_values.append(engine.EngineKPIs.net_power)
-        work_values.append(engine.EngineKPIs.net_work)
+        heat_values.append(engine.engineKPIs.net_heat)
+        power_values.append(engine.engineKPIs.net_power)
+        work_values.append(engine.engineKPIs.net_work)
         efficiency_values.append(engine.engineKPIs.efficiency)
 
     return heat_values, power_values, work_values, efficiency_values
@@ -90,9 +90,9 @@ def simulate_gas_mixtures_KPIs(temp_hot, hydrogen_mole_fractions,
 
         engine = StirlingEngine(params_mod)
         engine.run_simulation()
-        heat_values.append(engine.EngineKPIs.net_heat)
-        power_values.append(engine.EngineKPIs.net_power)
-        work_values.append(engine.EngineKPIs.net_work)
+        heat_values.append(engine.engineKPIs.net_heat)
+        power_values.append(engine.engineKPIs.net_power)
+        work_values.append(engine.engineKPIs.net_work)
         efficiency_values.append(engine.engineKPIs.efficiency)
 
     return heat_values, power_values, work_values, efficiency_values
