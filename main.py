@@ -216,25 +216,25 @@ def run():
                        power_helium, efficiency_hydrogen, efficiency_helium)
 
     # Gas mixtures working fluid
-    # temp_hot = 1200
-    # hydrogen_mole_fractions = np.linspace(1, 0, 21, endpoint=True)
+    temp_hot = 1200
+    hydrogen_mole_fractions = np.linspace(1, 0, 21, endpoint=True)
 
-    # # Simulate KPIs for Enskog and Classical models
-    # hydrogen_helium_params.is_max = True
-    # heat_enskog_max, power_enskog_max, work_enskog_max, efficiency_enskog_max = simulate_gas_mixtures_KPIs(
-    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
-    # hydrogen_helium_params.is_max = False
-    # heat_enskog_min, power_enskog_min, work_enskog_min, efficiency_enskog_min = simulate_gas_mixtures_KPIs(
-    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
-    # hydrogen_helium_params.is_max = True
-    # heat_classical_max, power_classical_max, work_classical_max, efficiency_classical_max = simulate_gas_mixtures_KPIs(
-    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
-    # hydrogen_helium_params.is_max = False
-    # heat_classical_min, power_classical_min, work_classical_min, efficiency_classical_min = simulate_gas_mixtures_KPIs(
-    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
+    # Simulate KPIs for Enskog and Classical models
+    hydrogen_helium_params.is_max = True
+    heat_enskog_max, power_enskog_max, work_enskog_max, efficiency_enskog_max = simulate_gas_mixtures_KPIs(
+        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
+    hydrogen_helium_params.is_max = False
+    heat_enskog_min, power_enskog_min, work_enskog_min, efficiency_enskog_min = simulate_gas_mixtures_KPIs(
+        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
+    hydrogen_helium_params.is_max = True
+    heat_classical_max, power_classical_max, work_classical_max, efficiency_classical_max = simulate_gas_mixtures_KPIs(
+        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
+    hydrogen_helium_params.is_max = False
+    heat_classical_min, power_classical_min, work_classical_min, efficiency_classical_min = simulate_gas_mixtures_KPIs(
+        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
 
-    # plot_gas_mixture_KPI(temp_hot, hydrogen_mole_fractions, power_enskog_max, 
-    #                      power_enskog_min, power_classical_min, power_enskog_min, "power_vs_hydrogen_mole_fraction")
+    plot_gas_mixture_KPI(temp_hot, hydrogen_mole_fractions, power_enskog_max, 
+                         power_enskog_min, power_classical_max, power_classical_min, "power_vs_hydrogen_mole_fraction")
     
     
 if __name__ == "__main__":
