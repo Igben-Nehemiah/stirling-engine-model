@@ -247,7 +247,7 @@ class StirlingEngine:
         print('=====================  Schmidt Analysis  =================')
         print(f' Work (Joules): {w:.3e},  Power (Watts): {power:.3e}')
         print(f' Qexp (Joules): {we:.3e},  Qcom (Joules): {wc:.3e}')
-        print(f' Indicated Efficiency: {efficiency:.3f}')
+        print(f' Indicated Efficiency: {100*efficiency:.3f}')
         print('==========================================================')
 
         return mgas

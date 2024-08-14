@@ -1,9 +1,10 @@
+import os
 from math import pi
 from stirling_engine import StirlingEngine
 from working_fluid import GasMixtures, IdealGasWorkingFluid
 import matplotlib.pyplot as plt
 import numpy as np
-
+import scienceplots
 
 def simulate_pure_gas_KPIs(heater_wall_temperature_values, working_fluid):
     heat_values = []
@@ -152,6 +153,9 @@ def plot_gas_mixture_KPI(temp_hot, hydrogen_mole_fractions, kpi_enskog_max, kpi_
     plt.savefig(f"./figures/{kpi_name}_{temp_hot}.pdf", dpi=300)
 
 def run():
+    if not os.path.exists("./figures"):
+        os.makedirs("./figures")
+        
     # Data parameters for hydrogen and helium
     hydrogen_params = IdealGasWorkingFluid.Parameters(
         mu0=8.76e-6,
@@ -196,38 +200,42 @@ def run():
         is_max=False
     )
 
-    #-----------------------------------------------------------------
     heater_wall_temps = np.linspace(450, 1050, 10)
     
     # Pure gases working fluid
     _, power_hydrogen, _, efficiency_hydrogen = simulate_pure_gas_KPIs(heater_wall_temps, hydrogen)
     _, power_helium, _, efficiency_helium = simulate_pure_gas_KPIs(heater_wall_temps, helium)
 
-    # Gas mixtures working fluid
-    temp_hot = 1200
-    hydrogen_mole_fractions = np.linspace(1, 0, 21, endpoint=True)
-
-    # Simulate KPIs for Enskog and Classical models
-    hydrogen_helium_params.is_max = True
-    heat_enskog_max, power_enskog_max, work_enskog_max, efficiency_enskog_max = simulate_gas_mixtures_KPIs(
-        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
-    hydrogen_helium_params.is_max = False
-    heat_enskog_min, power_enskog_min, work_enskog_min, efficiency_enskog_min = simulate_gas_mixtures_KPIs(
-        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
-    hydrogen_helium_params.is_max = True
-    heat_classical_max, power_classical_max, work_classical_max, efficiency_classical_max = simulate_gas_mixtures_KPIs(
-        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
-    hydrogen_helium_params.is_max = False
-    heat_classical_min, power_classical_min, work_classical_min, efficiency_classical_min = simulate_gas_mixtures_KPIs(
-        temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
-
+    # Plot setting 
     plt.style.use(["science", "ieee", "no-latex"])
+
     cold_sink_temp = 288  # Temperature of the cold reservoir (in Kelvin)
+
+
     plot_pure_gas_KPIs(cold_sink_temp, heater_wall_temps, power_hydrogen,
                        power_helium, efficiency_hydrogen, efficiency_helium)
-    
+
+    # Gas mixtures working fluid
+    # temp_hot = 1200
+    # hydrogen_mole_fractions = np.linspace(1, 0, 21, endpoint=True)
+
+    # # Simulate KPIs for Enskog and Classical models
+    # hydrogen_helium_params.is_max = True
+    # heat_enskog_max, power_enskog_max, work_enskog_max, efficiency_enskog_max = simulate_gas_mixtures_KPIs(
+    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
+    # hydrogen_helium_params.is_max = False
+    # heat_enskog_min, power_enskog_min, work_enskog_min, efficiency_enskog_min = simulate_gas_mixtures_KPIs(
+    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=False)
+    # hydrogen_helium_params.is_max = True
+    # heat_classical_max, power_classical_max, work_classical_max, efficiency_classical_max = simulate_gas_mixtures_KPIs(
+    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
+    # hydrogen_helium_params.is_max = False
+    # heat_classical_min, power_classical_min, work_classical_min, efficiency_classical_min = simulate_gas_mixtures_KPIs(
+    #     temp_hot, hydrogen_mole_fractions, hydrogen_helium_params, is_classical=True)
+
     # plot_gas_mixture_KPI(temp_hot, hydrogen_mole_fractions, power_enskog_max, 
     #                      power_enskog_min, power_classical_min, power_enskog_min, "power_vs_hydrogen_mole_fraction")
+    
     
 if __name__ == "__main__":
     run()
