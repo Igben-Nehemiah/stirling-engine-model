@@ -11,4 +11,3 @@ pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 SciencePlots==2.1.1
 six==1.16.0
-pyenskog/pyenskog-0.2-cp310-cp310-linux_x86_64.whl

@@ -39,6 +39,11 @@ This repository contains the implementation of a Stirling engine model that inve
 2. Install the required Python packages:
     ```bash
     pip install -r requirements.txt
+3. Install Enskog calculator:
+    - Linux
+        ```bash 
+        pip install pyenskog/pyenskog-0.2-cp310-cp310-linux_x86_64.whl
+    - Windows (Not yet implemented)
 
 ### Usage
 1. To run the Stirling engine simulation:
