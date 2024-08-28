@@ -44,7 +44,8 @@ This repository contains the implementation of a Stirling engine model that inve
         ```bash 
         pip install pyenskog/pyenskog-0.2-cp310-cp310-linux_x86_64.whl
     - Windows (Not yet implemented)
-
+    ```bash 
+            pip install pyenskog/pyenskog-0.2-cp312-cp312-win_amd64.whl
 ### Usage
 1. To run the Stirling engine simulation:
     ```bash
